@@ -1,9 +1,10 @@
+```yaml
 name: Deploy to GitHub Pages
 
 on:
   push:
     branches:
-      - main  # 监听 main 分支的提交
+      - main
 
 permissions:
   contents: read
@@ -27,7 +28,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24  # 核心升级：与 GitHub Actions 强制要求的 Node 24 完全一致
 
       - name: Install Dependencies
         run: npm install
