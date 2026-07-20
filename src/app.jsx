@@ -1,4 +1,4 @@
-```react
+react
 import React, { useState, useEffect } from 'react';
 import { 
   Compass, 
@@ -1242,5 +1242,3 @@ ${paper.abstract}
     </div>
   );
 }
-
-```
