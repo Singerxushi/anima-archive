@@ -1,0 +1,41 @@
+{
+  "updatedAt": null,
+  "timezone": "Asia/Shanghai",
+  "schedule": "Every day at 08:00 UTC+8 (GitHub Actions cron: 0 0 * * *)",
+  "sources": [
+    {
+      "id": "arxiv-quant-ph",
+      "label": "arXiv · quant-ph",
+      "type": "rss",
+      "url": "https://rss.arxiv.org/rss/quant-ph",
+      "ok": true,
+      "count": 0
+    },
+    {
+      "id": "arxiv-q-bio-nc",
+      "label": "arXiv · q-bio.NC",
+      "type": "rss",
+      "url": "https://rss.arxiv.org/rss/q-bio.NC",
+      "ok": true,
+      "count": 0
+    },
+    {
+      "id": "psyarxiv-psychoanalysis",
+      "label": "PsyArXiv · 精神分析",
+      "type": "crossref",
+      "url": "https://api.crossref.org/works",
+      "ok": true,
+      "count": 0
+    },
+    {
+      "id": "psyarxiv-analytical-psychology",
+      "label": "PsyArXiv · 分析心理学",
+      "type": "crossref",
+      "url": "https://api.crossref.org/works",
+      "ok": true,
+      "count": 0
+    }
+  ],
+  "items": []
+}
+
