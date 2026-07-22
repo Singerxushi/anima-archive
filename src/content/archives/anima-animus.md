@@ -1,15 +1,15 @@
 ---
 id: arch-1
-title: 阿尼玛与阿尼姆斯：灵魂的双重面镜
-subtitle: ON THE ANIMA AND ANIMUS: THE TWIN MIRRORS OF THE SOUL
-category: 原型理论 / ARCHETYPES
+title: "阿尼玛与阿尼姆斯：灵魂的双重面镜"
+subtitle: "ON THE ANIMA AND ANIMUS: THE TWIN MIRRORS OF THE SOUL"
+category: "原型理论 / ARCHETYPES"
 tags:
-  - 荣格心理学
-  - 性别原型
-  - 潜意识
-author: Jungian_Explorer
-date: 2026-07-15
-summary: 探讨人类心灵中异性潜意识原型的投射与整合过程，以及其在梦境、艺术与人格发展中的表现。
+  - "荣格心理学"
+  - "性别原型"
+  - "潜意识"
+author: "Jungian_Explorer"
+date: "2026-07-15"
+summary: "探讨人类心灵中异性潜意识原型的投射与整合过程，如何通过梦境与艺术创作显化并完成内省。"
 ---
 
 # 阿尼玛与阿尼姆斯：灵魂的双重面镜
