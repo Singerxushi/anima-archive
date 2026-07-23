@@ -1,73 +1,36 @@
 /**
  * 修改原因：
- * 1. 兼容现有 App.jsx / Forum.jsx / Journal.jsx 的调用方式。
- * 2. 修复 YOUR_USER / YOUR_REPO 占位符导致的 Discussions / Issue 链接错误。
- * 3. 在不改动当前 localStorage 结构的前提下，为 owner / repo 提供默认值。
+ * 1. 修复 YOUR_USER / YOUR_REPO 占位符导致的无效链接。
+ * 2. 统一 Issues / Discussions / Contents API 的配置解析逻辑。
+ * 3. 与 src/config/github.js 对齐，保留向后兼容。
  *
  * 兼容性注意：
- * - 仍然接受 { owner, repo, token } 结构。
- * - 仍然支持前端直接调用 GitHub Contents API。
- * - 仍然会在存在 token 时直接写仓库，因此这只是“最小补丁”，不是最终安全方案。
+ * - 外部仍可传入 { owner, repo, token }。
+ * - 如果未来迁移到后端代理 / GitHub App，只需要替换 syncArchiveToGithub 的实现。
  */
 
-const DEFAULT_GITHUB = {
-  owner: 'Singerxushi',
-  repo: 'anima-archive',
-};
-
-function normalizeValue(value) {
-  return String(value || '').trim();
-}
-
-function resolveGithubConfig(githubConfig = {}) {
-  const rawOwner = normalizeValue(githubConfig.owner);
-  const rawRepo = normalizeValue(githubConfig.repo);
-  const rawToken = normalizeValue(githubConfig.token);
-
-  const owner =
-    rawOwner && rawOwner !== 'YOUR_USER' ? rawOwner : DEFAULT_GITHUB.owner;
-
-  const repo =
-    rawRepo && rawRepo !== 'YOUR_REPO' ? rawRepo : DEFAULT_GITHUB.repo;
-
-  return {
-    owner,
-    repo,
-    token: rawToken,
-  };
-}
+import { combineGithubConfig } from '../config/github';
 
 function toBase64Unicode(value) {
   return btoa(unescape(encodeURIComponent(value)));
 }
 
-export function generateGithubIssueUrl(githubConfig = {}, paper = {}) {
+function normalizePaper(paper = {}) {
+  return {
+    title: String(paper.title || '').trim(),
+    author: String(paper.author || '').trim() || 'Anonymous',
+    email: String(paper.email || '').trim(),
+    abstract: String(paper.abstract || '').trim(),
+  };
+}
+
+export function resolveGithubConfig(githubConfig = {}) {
+  return combineGithubConfig(githubConfig, githubConfig.token || '');
+}
+
+export function getRepositoryUrl(githubConfig = {}) {
   const { owner, repo } = resolveGithubConfig(githubConfig);
-
-  const title = encodeURIComponent(
-    `[Submission] ${paper.title || 'Untitled'} - ${paper.author || 'Anonymous'}`
-  );
-
-  const body = encodeURIComponent(`### ANIMA JOURNAL SUBMISSION
-
-**论文题目 (Title):**
-${paper.title || ''}
-
-**作者/笔名 (Author):**
-${paper.author || 'Anonymous'}
-
-**联系信箱 (Email):**
-${paper.email || ''}
-
-**论文大纲与摘要 (Abstract & Outline):**
-${paper.abstract || ''}
-
----
-
-*Created via Anima Archive Portal.
-This submission will be automatically processed by the editorial board.*`);
-
-  return `https://github.com/${owner}/${repo}/issues/new?title=${title}&body=${body}&labels=journal-submission`;
+  return `https://github.com/${owner}/${repo}`;
 }
 
 export function getDiscussionsUrl(githubConfig = {}) {
@@ -75,11 +38,41 @@ export function getDiscussionsUrl(githubConfig = {}) {
   return `https://github.com/${owner}/${repo}/discussions`;
 }
 
+export function generateGithubIssueUrl(githubConfig = {}, paper = {}) {
+  const { owner, repo } = resolveGithubConfig(githubConfig);
+  const normalizedPaper = normalizePaper(paper);
+
+  const title = encodeURIComponent(
+    `[Submission] ${normalizedPaper.title || 'Untitled'} - ${normalizedPaper.author}`
+  );
+
+  const body = encodeURIComponent(`### ANIMA JOURNAL SUBMISSION
+
+**论文题目 (Title):**
+${normalizedPaper.title}
+
+**作者/笔名 (Author):**
+${normalizedPaper.author}
+
+**联系信箱 (Email):**
+${normalizedPaper.email || '未填写'}
+
+**论文大纲与摘要 (Abstract & Outline):**
+${normalizedPaper.abstract}
+
+---
+
+*Created via Anima Archive Portal.*
+This submission should be reviewed in GitHub Issues.`);
+
+  return `https://github.com/${owner}/${repo}/issues/new?title=${title}&body=${body}&labels=journal-submission`;
+}
+
 export async function syncArchiveToGithub(githubConfig = {}, item) {
   const { owner, repo, token } = resolveGithubConfig(githubConfig);
 
   if (!token) {
-    throw new Error('缺少 GitHub token，无法同步到远程仓库');
+    throw new Error('缺少 GitHub token，无法写入远程仓库');
   }
 
   if (!item?.id || !item?.title) {
