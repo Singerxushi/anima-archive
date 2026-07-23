@@ -1,12 +1,27 @@
+/**
+ * GitHub Discussions Cache Loader
+ *
+ * 数据来源:
+ * GitHub Actions
+ *
+ * public/data/discussions.json
+ */
+
+
 export async function loadDiscussionsCache(){
+
 
   const response =
     await fetch(
       "./data/discussions.json",
       {
-        cache:"no-store"
+
+        cache:
+          "no-store"
+
       }
     );
+
 
 
   if(!response.ok){
@@ -18,10 +33,26 @@ export async function loadDiscussionsCache(){
   }
 
 
+
   const data =
     await response.json();
 
 
-  return data;
+
+  return {
+
+    updatedAt:
+      data.updatedAt || "",
+
+
+    source:
+      data.source ||
+      "github-discussions-cache",
+
+
+    discussions:
+      data.discussions || []
+
+  };
 
 }
