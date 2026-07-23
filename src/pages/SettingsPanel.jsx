@@ -1,92 +1,109 @@
-import { CheckCircle, Github, Settings, Sparkles } from 'lucide-react';
+/**
+ * 修改原因：
+ * 1. 修复 YOUR_USER / YOUR_REPO 占位符导致的无效链接。
+ * 2. 统一 Issues / Discussions / Contents API 的配置解析逻辑。
+ * 3. 与 src/config/github.js 对齐，保留向后兼容。
+ *
+ * 兼容性注意：
+ * - 外部仍可传入 { owner, repo, token }。
+ * - 如果未来迁移到后端代理 / GitHub App，只需要替换 syncArchiveToGithub 的实现。
+ */
 
-export default function SettingsPanel({
-  githubConfig,
-  setGithubConfig,
-  triggerNotification,
-  setActiveTab,
-}) {
-  return (
-          <div className="max-w-xl mx-auto border border-[#22201d] bg-[#0f0f0e] p-8 space-y-6">
-            
-            <div className="border-b border-[#22201d] pb-4">
-              <h2 className="text-lg font-serif text-[#f4f1eb] flex items-center space-x-2.5">
-                <Settings className="w-5 h-5 text-[#c5a880]" />
-                <span>GITHUB INTEGRATION / 接口集成中心</span>
-              </h2>
-              <p className="text-xs font-mono text-[#837f75] mt-1">
-                CONFIGURE REPOSITORIES FOR DIRECT GIT PIPELINE
-              </p>
-            </div>
+import { combineGithubConfig } from '../config/github';
 
-            <div className="space-y-4 font-mono text-xs">
-              <div>
-                <label className="block text-[#a29d93] mb-1.5">
-                  GitHub 账户或组织名 / OWNER (USERNAME)
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. aethelgard"
-                  value={githubConfig.owner}
-                  onChange={(e) => setGithubConfig({...githubConfig, owner: e.target.value})}
-                  className="w-full bg-[#0d0d0c] border border-[#22201d] text-[#e8e4dc] px-3.5 py-2.5 rounded-none focus:outline-none focus:border-[#c5a880]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[#a29d93] mb-1.5">
-                  目标仓库名 / REPOSITORY NAME
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. anima-archive"
-                  value={githubConfig.repo}
-                  onChange={(e) => setGithubConfig({...githubConfig, repo: e.target.value})}
-                  className="w-full bg-[#0d0d0c] border border-[#22201d] text-[#e8e4dc] px-3.5 py-2.5 rounded-none focus:outline-none focus:border-[#c5a880]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[#a29d93] mb-1.5 flex items-center justify-between">
-                  <span>个人访问密匙 / PERSONAL ACCESS TOKEN (PAT)</span>
-                  <span className="text-[9px] text-[#837f75] normal-case font-normal">保存在本地安全沙盒</span>
-                </label>
-                <input
-                  type="password"
-                  placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxx"
-                  value={githubConfig.token}
-                  onChange={(e) => setGithubConfig({...githubConfig, token: e.target.value})}
-                  className="w-full bg-[#0d0d0c] border border-[#22201d] text-[#e8e4dc] px-3.5 py-2.5 rounded-none focus:outline-none focus:border-[#c5a880]"
-                />
-              </div>
-
-              <div className="bg-[#0a0a09] border border-[#22201d] p-5 space-y-2.5">
-                <p className="font-bold text-[#c5a880] flex items-center space-x-1.5">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>关于无 Token 安全运行模式：</span>
-                </p>
-                <p className="text-[#837f75] leading-relaxed">
-                  本站点全面支持“无 Token”工作流：
-                  <br />
-                  - 只需要填写 <strong>Owner</strong> 与 <strong>Repository</strong>。
-                  <br />
-                  - 在学报投稿时，系统将使用纯前端计算出高度规范化的 Issue 链接，用户跳转点击 “Submit” 即可，不需要向网页透露任何凭证密匙。
-                </p>
-              </div>
-
-              <button
-                onClick={() => {
-                  triggerNotification('⚙️ 核心配置在本地沙盒环境中写入并更新完毕。');
-                  setActiveTab('home');
-                }}
-                className="w-full bg-[#c5a880] text-[#0d0d0c] hover:bg-[#b0936f] py-3 transition-all font-semibold tracking-widest uppercase flex items-center justify-center space-x-2"
-              >
-                <CheckCircle className="w-4 h-4" />
-                <span>SAVE CONFIGURATION / 保存本地</span>
-              </button>
-            </div>
-
-          </div>
-  );
+function toBase64Unicode(value) {
+  return btoa(unescape(encodeURIComponent(value)));
 }
 
+function normalizePaper(paper = {}) {
+  return {
+    title: String(paper.title || '').trim(),
+    author: String(paper.author || '').trim() || 'Anonymous',
+    email: String(paper.email || '').trim(),
+    abstract: String(paper.abstract || '').trim(),
+  };
+}
+
+export function resolveGithubConfig(githubConfig = {}) {
+  return combineGithubConfig(githubConfig, githubConfig.token || '');
+}
+
+export function getRepositoryUrl(githubConfig = {}) {
+  const { owner, repo } = resolveGithubConfig(githubConfig);
+  return `https://github.com/${owner}/${repo}`;
+}
+
+export function getDiscussionsUrl(githubConfig = {}) {
+  const { owner, repo } = resolveGithubConfig(githubConfig);
+  return `https://github.com/${owner}/${repo}/discussions`;
+}
+
+export function generateGithubIssueUrl(githubConfig = {}, paper = {}) {
+  const { owner, repo } = resolveGithubConfig(githubConfig);
+  const normalizedPaper = normalizePaper(paper);
+
+  const title = encodeURIComponent(
+    `[Submission] ${normalizedPaper.title || 'Untitled'} - ${normalizedPaper.author}`
+  );
+
+  const body = encodeURIComponent(`### ANIMA JOURNAL SUBMISSION
+
+**论文题目 (Title):**
+${normalizedPaper.title}
+
+**作者/笔名 (Author):**
+${normalizedPaper.author}
+
+**联系信箱 (Email):**
+${normalizedPaper.email || '未填写'}
+
+**论文大纲与摘要 (Abstract & Outline):**
+${normalizedPaper.abstract}
+
+---
+
+*Created via Anima Archive Portal.*
+This submission should be reviewed in GitHub Issues.`);
+
+  return `https://github.com/${owner}/${repo}/issues/new?title=${title}&body=${body}&labels=journal-submission`;
+}
+
+export async function syncArchiveToGithub(githubConfig = {}, item) {
+  const { owner, repo, token } = resolveGithubConfig(githubConfig);
+
+  if (!token) {
+    throw new Error('缺少 GitHub token，无法写入远程仓库');
+  }
+
+  if (!item?.id || !item?.title) {
+    throw new Error('档案对象不完整，无法写入远程仓库');
+  }
+
+  const path = `archive/${item.id}.json`;
+  const contentBase64 = toBase64Unicode(JSON.stringify(item, null, 2));
+
+  const response = await fetch(
+    `https://api.github.com/repos/${owner}/${repo}/contents/${path}`,
+    {
+      method: 'PUT',
+      headers: {
+        Accept: 'application/vnd.github+json',
+        Authorization: `Bearer ${token}`,
+        'X-GitHub-Api-Version': '2022-11-28',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        message: `archive: add [${item.title}] to subconscious records`,
+        content: contentBase64,
+        branch: 'main',
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({}));
+    throw new Error(errData.message || 'API 异常');
+  }
+
+  return response;
+}
