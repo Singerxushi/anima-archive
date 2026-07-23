@@ -1,25 +1,48 @@
-import {
-  DEFAULT_GITHUB_CONFIG,
-  sanitizeGithubConfig,
-} from "../config/github";
+/**
+ * GitHub Only Service Layer
+ * Anima Archive
+ */
 
 
 /**
- * 获取 GitHub 配置
+ * 默认仓库
  */
-function resolveGithubConfig(config = {}) {
+const DEFAULT_GITHUB = {
+  owner: "Singerxushi",
+  repo: "anima-archive",
+};
 
-  return sanitizeGithubConfig({
-    ...DEFAULT_GITHUB_CONFIG,
-    ...config,
-  });
+
+
+/**
+ * 处理 GitHub 配置
+ */
+function resolveGithubConfig(
+  githubConfig = {}
+){
+
+  return {
+
+    owner:
+      githubConfig.owner ||
+      DEFAULT_GITHUB.owner,
+
+    repo:
+      githubConfig.repo ||
+      DEFAULT_GITHUB.repo,
+
+    token:
+      githubConfig.token ||
+      "",
+
+  };
 
 }
 
 
 
 /**
- * 创建 GitHub Issue 投稿链接
+ * 创建 Issue 投稿链接
  */
 export function generateGithubIssueUrl(
   githubConfig = {},
@@ -40,21 +63,30 @@ export function generateGithubIssueUrl(
 
   const body =
     encodeURIComponent(
-`### ANIMA JOURNAL SUBMISSION
+`
+### ANIMA JOURNAL SUBMISSION
+
 
 Title:
 ${paper.title || ""}
 
+
 Author:
 ${paper.author || "Anonymous"}
+
+
+Email:
+${paper.email || ""}
+
 
 Abstract:
 
 ${paper.abstract || ""}
 
+
 ---
 
-Submitted via Anima Archive.
+Created via Anima Archive Portal.
 `
     );
 
@@ -74,7 +106,7 @@ Submitted via Anima Archive.
 
 
 /**
- * GitHub Discussions 页面地址
+ * GitHub Discussions 地址
  */
 export function getDiscussionsUrl(
   githubConfig = {}
@@ -95,9 +127,14 @@ export function getDiscussionsUrl(
 
 
 /**
- * 获取 GitHub Discussions 内容
+ * 获取 GitHub Discussions
  *
- * 用于论坛模块读取 GitHub Discussions
+ * 注意：
+ * GitHub GraphQL API 必须需要 token
+ * 因为 GitHub Pages 是静态站，
+ * 不能暴露 token。
+ *
+ * 因此这里采用匿名失败保护。
  */
 export async function fetchGithubForumDiscussions(
   githubConfig = {}
@@ -105,12 +142,25 @@ export async function fetchGithubForumDiscussions(
 
   const {
     owner,
-    repo
+    repo,
+    token
   } = resolveGithubConfig(githubConfig);
+
+
+
+  if(!token){
+
+    throw new Error(
+      "GitHub token missing"
+    );
+
+  }
+
 
 
   const query = `
   query {
+
     repository(
       owner:"${owner}"
       name:"${repo}"
@@ -134,9 +184,13 @@ export async function fetchGithubForumDiscussions(
 
           url
 
+
           author{
+
             login
+
           }
+
 
           createdAt
 
@@ -144,7 +198,9 @@ export async function fetchGithubForumDiscussions(
 
 
           comments{
+
             totalCount
+
           }
 
         }
@@ -157,6 +213,7 @@ export async function fetchGithubForumDiscussions(
   `;
 
 
+
   const response =
     await fetch(
       "https://api.github.com/graphql",
@@ -165,17 +222,24 @@ export async function fetchGithubForumDiscussions(
         method:"POST",
 
         headers:{
+
           "Content-Type":
-            "application/json"
+            "application/json",
+
+          Authorization:
+            `bearer ${token}`
+
         },
 
 
-        body:JSON.stringify({
-          query
-        })
+        body:
+          JSON.stringify({
+            query
+          })
 
       }
     );
+
 
 
   if(!response.ok){
@@ -187,8 +251,10 @@ export async function fetchGithubForumDiscussions(
   }
 
 
+
   const result =
     await response.json();
+
 
 
   return (
@@ -206,12 +272,9 @@ export async function fetchGithubForumDiscussions(
 
 
 /**
- * Archive 同步接口
+ * Archive 同步
  *
- * 保留旧 App.jsx 调用兼容
- *
- * 实际 GitHub Only 架构中：
- * Archive 数据由 GitHub Actions 管理
+ * 保留兼容旧 App.jsx
  */
 export async function syncArchiveToGithub(
   githubConfig = {},
@@ -220,31 +283,87 @@ export async function syncArchiveToGithub(
 
   const {
     owner,
-    repo
+    repo,
+    token
   } = resolveGithubConfig(githubConfig);
 
 
-  if(!item.id){
+
+  if(!token){
 
     throw new Error(
-      "Archive item missing id"
+      "缺少 GitHub token，无法同步"
     );
 
   }
 
 
-  return {
 
-    success:true,
+  const path =
+    `archive/${item.id}.json`;
 
-    repository:
-      `${owner}/${repo}`,
 
-    item,
 
-    message:
-      "Archive sync delegated to GitHub Actions"
+  const content =
+    btoa(
+      unescape(
+        encodeURIComponent(
+          JSON.stringify(
+            item,
+            null,
+            2
+          )
+        )
+      )
+    );
 
-  };
+
+
+  const response =
+    await fetch(
+      `https://api.github.com/repos/${owner}/${repo}/contents/${path}`,
+      {
+
+        method:"PUT",
+
+        headers:{
+
+          Authorization:
+            `token ${token}`,
+
+          "Content-Type":
+            "application/json"
+
+        },
+
+
+        body:
+          JSON.stringify({
+
+            message:
+              `archive: add ${item.title}`,
+
+            content,
+
+            branch:
+              "main"
+
+          })
+
+      }
+    );
+
+
+
+  if(!response.ok){
+
+    throw new Error(
+      "GitHub archive sync failed"
+    );
+
+  }
+
+
+  return response;
 
 }
