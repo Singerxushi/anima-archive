@@ -44,8 +44,13 @@ jobs:
         run: npm install
 
       - name: Update research feed
-        run: node scripts/update-research-feed.mjs
+  run: node scripts/update-research-feed.mjs
 
+      - name: Sync forum discussions cache
+  run: node scripts/update-discussions.mjs
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
       - name: Save research feed snapshot
         shell: bash
         run: |
