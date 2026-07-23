@@ -30,7 +30,7 @@ export default function Journal({
 
             <p className="text-sm leading-7 text-[#b8b1a4]">
               本学报采用公开、可追踪的 GitHub Issues 工作流来接收论文投稿与初步评议。
-              点击右侧表单提交后，页面会打开 GitHub 中已预填标题、摘要和标签的新 Issue 页面。
+              点击下文表单提交后，页面会打开 GitHub 中已预填标题、摘要和标签的新 Issue 页面。
             </p>
           </div>
 
