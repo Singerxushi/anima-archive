@@ -7,7 +7,7 @@
  * - props 与现有 App.jsx 保持兼容。
  */
 
-import { Book, ExternalLink } from 'lucide-react';
+import { Book, ExternalLink, Github } from 'lucide-react';
 import { JOURNAL_ISSUES } from '../data/initialData';
 
 export default function Journal({
@@ -166,12 +166,13 @@ export default function Journal({
             </div>
 
             <button
-              type="submit"
-              className="w-full bg-[#c5a880] text-[#0d0d0c] hover:bg-[#b0936f] py-2.5 transition-all font-semibold tracking-widest uppercase flex items-center justify-center space-x-2"
-            >
-              <ExternalLink className="w-3.5 h-3.5" />
-              <span>Submit via GitHub Issue</span>
-            </button>
+  type="submit"
+  className="w-full inline-flex items-center justify-center space-x-2 border border-[#c5a880] hover:bg-[#c5a880] hover:text-[#0d0d0c] text-[#c5a880] px-4 py-2 text-xs font-mono tracking-widest transition-all uppercase"
+>
+  <Github className="w-4 h-4" />
+  <span>SUBMIT VIA GITHUB ISSUE</span>
+  <ExternalLink className="w-3.5 h-3.5" />
+</button>
           </form>
         </aside>
       </div>
