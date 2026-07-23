@@ -1,16 +1,30 @@
 name: Deploy to GitHub Pages
 
-'on':
+on:
   push:
     branches:
       - main
   workflow_dispatch:
   schedule:
     # GitHub Actions cron 使用 UTC；00:00 UTC = 东八区 08:00。
-    - cron: '0 0 * * *'
+    - cron: "0 0 * * *"
+  discussion:
+    types:
+      - created
+      - edited
+      - deleted
+      - answered
+      - unanswered
+      - category_changed
+  discussion_comment:
+    types:
+      - created
+      - edited
+      - deleted
 
 permissions:
   contents: write
+  discussions: read
   pages: write
   id-token: write
 
@@ -32,25 +46,34 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '24.x'
+          node-version: "20"
           cache: npm
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Update research feed
         run: node scripts/update-research-feed.mjs
 
-      - name: Save research feed snapshot
+      - name: Sync forum discussions cache
+        run: node scripts/sync-discussions-cache.mjs
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_OWNER: Singerxushi
+          GITHUB_REPO: anima-archive
+
+      - name: Save generated data snapshots
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/data/research-feed.json
+
+          git add public/data/research-feed.json public/data/forum-discussions.json
+
           if git diff --cached --quiet; then
-            echo "Research feed has no changes."
+            echo "Generated data has no changes."
           else
-            git commit -m "chore: update research feed [skip ci]"
+            git commit -m "chore(data): refresh research feed and forum cache [skip ci]"
             git push origin HEAD:main
           fi
 
