@@ -1,19 +1,7 @@
-/**
- * 修改原因：
- * 1. 将“接口集成中心”明确为管理员用途，避免普通访客误以为必须配置 PAT。
- * 2. owner / repo 采用显式保存；token 只走会话态，不与 localStorage 绑定。
- *
- * 兼容性注意：
- * - 组件 props 从旧版的 githubConfig/setGithubConfig 扩展为同时接收 githubToken/setGithubToken。
- * - App.jsx 已配套调整。
- */
-
 import { useEffect, useMemo, useState } from 'react';
 import {
-  AlertTriangle,
   CheckCircle,
-  Eye,
-  EyeOff,
+  ExternalLink,
   Github,
   RotateCcw,
   Settings,
@@ -27,31 +15,40 @@ import {
   sanitizeGithubConfig,
 } from '../config/github';
 
+function formatSyncTime(value) {
+  if (!value) return '尚未同步';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+
+  return new Intl.DateTimeFormat('zh-CN', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(date);
+}
+
 export default function SettingsPanel({
   githubConfig,
   setGithubConfig,
-  githubToken,
-  setGithubToken,
+  forumSyncMeta,
   triggerNotification,
   setActiveTab,
 }) {
   const [draftConfig, setDraftConfig] = useState(() =>
-    sanitizeGithubConfig(githubConfig)
+    sanitizeGithubConfig(githubConfig),
   );
-  const [draftToken, setDraftToken] = useState(githubToken || '');
-  const [showToken, setShowToken] = useState(false);
 
   useEffect(() => {
     setDraftConfig(sanitizeGithubConfig(githubConfig));
   }, [githubConfig]);
 
-  useEffect(() => {
-    setDraftToken(githubToken || '');
-  }, [githubToken]);
-
   const resolvedConfig = useMemo(
     () => sanitizeGithubConfig(draftConfig),
-    [draftConfig]
+    [draftConfig],
   );
 
   const repositoryUrl = `https://github.com/${resolvedConfig.owner}/${resolvedConfig.repo}`;
@@ -60,8 +57,7 @@ export default function SettingsPanel({
   function handleSave(event) {
     event.preventDefault();
     setGithubConfig(resolvedConfig);
-    setGithubToken(draftToken.trim());
-    triggerNotification('⚙️ GitHub 集成配置已更新。Owner/Repo 已本地保存，Token 已写入当前会话。');
+    triggerNotification('GitHub 仓库配置已更新。前端不再保存 GitHub token。');
     setActiveTab('home');
   }
 
@@ -70,61 +66,49 @@ export default function SettingsPanel({
     triggerNotification('已恢复默认仓库配置，请记得点击保存。');
   }
 
-  function handleClearToken() {
-    setDraftToken('');
-    setGithubToken('');
-    clearStoredGithubToken();
-    triggerNotification('当前会话中的 GitHub token 已清空。');
-  }
-
   function handleClearAll() {
     clearStoredGithubConfig();
     clearStoredGithubToken();
     setDraftConfig(DEFAULT_GITHUB_CONFIG);
-    setDraftToken('');
     setGithubConfig(DEFAULT_GITHUB_CONFIG);
-    setGithubToken('');
-    triggerNotification('本地 GitHub 配置与会话 token 已清空，已恢复默认仓库。');
+    triggerNotification('本地 GitHub 配置已清空并恢复默认值。');
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-      <div className="border border-[#22201d] bg-[#11110f] p-6 sm:p-8 space-y-8">
-        <div className="space-y-3">
-          <div className="flex items-center space-x-3 text-[#c5a880]">
-            <Settings className="w-5 h-5" />
-            <span className="text-xs tracking-[0.35em] font-mono uppercase">
-              GitHub Integration Center
-            </span>
+    <div className="space-y-8">
+      <div className="border border-[#22201d] p-6 bg-[#0f0f0e] space-y-5">
+        <div className="space-y-2">
+          <div className="text-xs font-mono tracking-[0.3em] text-[#837f75] uppercase">
+            GitHub Integration Center
           </div>
-          <h2 className="text-2xl sm:text-3xl font-serif text-[#f4f1eb]">
+          <h2 className="text-2xl font-serif text-[#f4f1eb]">
             管理员接口集成中心
           </h2>
-          <p className="text-sm leading-7 text-[#b8b1a4]">
-            公开访问者只需要使用 Issues 投稿与 Discussions 讨论，不需要填写任何密钥。
-            这里只有管理员在需要远程写入归档仓库时才需要输入 token。
+          <p className="text-sm text-[#a29d93] leading-7">
+            当前站点采用 GitHub 原生集成：Archive 保持本地草稿体验，Journal
+            走 GitHub Issues，Forum 通过 GitHub Actions 同步 GitHub Discussions
+            到静态缓存。公开站点不再接收浏览器中的 PAT。
           </p>
         </div>
 
-        <div className="border border-[#3c3222] bg-[#17140f] p-4 text-xs leading-6 text-[#dcc8a2]">
-          <div className="flex items-start space-x-3">
-            <ShieldAlert className="w-4 h-4 mt-0.5 shrink-0" />
-            <div className="space-y-1">
-              <p className="font-semibold tracking-wider uppercase">
-                安全提示
-              </p>
-              <p>
-                Owner / Repo 会保存在浏览器本地；Token 仅保存在当前浏览器会话中，关闭浏览器后应失效。
-                请勿在公共设备中输入高权限 PAT。
-              </p>
-            </div>
+        <div className="border border-[#5e4634] bg-[#231b14] p-4 text-sm leading-7 text-[#d8c2a1]">
+          <div className="flex items-center gap-2 font-mono text-xs tracking-[0.2em] uppercase">
+            <ShieldAlert className="w-4 h-4" />
+            <span>安全基线</span>
           </div>
+          <p className="mt-3">
+            浏览器只保存 owner / repo，Forum 的公开内容通过 GitHub Actions
+            从 Discussions 拉取为静态 JSON 缓存。这样可以避免把高权限令牌暴露给前端。
+          </p>
         </div>
 
-        <form onSubmit={handleSave} className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <label className="block text-xs tracking-widest uppercase text-[#a29d93]">
+        <form
+          onSubmit={handleSave}
+          className="grid grid-cols-1 lg:grid-cols-12 gap-8"
+        >
+          <div className="lg:col-span-7 space-y-4">
+            <div>
+              <label className="block text-[#a29d93] mb-1">
                 GitHub 账户或组织名 / Owner
               </label>
               <input
@@ -140,8 +124,8 @@ export default function SettingsPanel({
               />
             </div>
 
-            <div className="space-y-2">
-              <label className="block text-xs tracking-widest uppercase text-[#a29d93]">
+            <div>
+              <label className="block text-[#a29d93] mb-1">
                 目标仓库名 / Repository
               </label>
               <input
@@ -156,106 +140,117 @@ export default function SettingsPanel({
                 placeholder="anima-archive"
               />
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <label className="block text-xs tracking-widest uppercase text-[#a29d93]">
-              管理员 PAT / Session Token
-            </label>
-            <div className="flex">
-              <input
-                type={showToken ? 'text' : 'password'}
-                value={draftToken}
-                onChange={(event) => setDraftToken(event.target.value)}
-                className="flex-1 bg-[#0d0d0c] border border-[#22201d] text-[#e8e4dc] px-3.5 py-2.5 rounded-none focus:outline-none focus:border-[#c5a880]"
-                placeholder="仅管理员需要填写；普通使用场景请留空"
-                autoComplete="off"
-              />
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="submit"
+                className="inline-flex items-center gap-2 border border-[#c5a880] hover:bg-[#c5a880] hover:text-[#0d0d0c] text-[#c5a880] px-4 py-2 text-xs font-mono tracking-widest transition-all uppercase"
+              >
+                <CheckCircle className="w-4 h-4" />
+                Save Configuration
+              </button>
+
               <button
                 type="button"
-                onClick={() => setShowToken((value) => !value)}
-                className="border-y border-r border-[#22201d] px-3 text-[#a29d93] hover:text-[#f4f1eb] hover:border-[#c5a880] transition-colors"
-                title={showToken ? '隐藏 token' : '显示 token'}
+                onClick={handleResetDefaults}
+                className="inline-flex items-center gap-2 border border-[#423f39] hover:border-[#c5a880] text-[#a29d93] hover:text-[#e8e4dc] px-4 py-2 text-xs font-mono tracking-widest transition-all uppercase"
               >
-                {showToken ? (
-                  <EyeOff className="w-4 h-4" />
-                ) : (
-                  <Eye className="w-4 h-4" />
-                )}
+                <RotateCcw className="w-4 h-4" />
+                Reset Defaults
+              </button>
+
+              <button
+                type="button"
+                onClick={handleClearAll}
+                className="inline-flex items-center gap-2 border border-[#6b3d38] hover:border-[#b77b70] text-[#c98f86] px-4 py-2 text-xs font-mono tracking-widest transition-all uppercase"
+              >
+                <Trash2 className="w-4 h-4" />
+                Clear Local Config
               </button>
             </div>
-            <p className="text-xs leading-6 text-[#8e8779]">
-              建议仅使用具备最小必要权限的 fine-grained token；如果你未来引入后端代理或 GitHub App，
-              这里可以长期保持为空。
-            </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 text-xs">
-            <div className="border border-[#22201d] p-4 bg-[#0d0d0c]">
-              <p className="text-[#837f75] uppercase tracking-widest mb-2">
-                Repository Preview
-              </p>
-              <p className="text-[#e8e4dc] break-all">{repositoryUrl}</p>
-            </div>
-            <div className="border border-[#22201d] p-4 bg-[#0d0d0c]">
-              <p className="text-[#837f75] uppercase tracking-widest mb-2">
-                Discussions Preview
-              </p>
-              <p className="text-[#e8e4dc] break-all">{discussionsUrl}</p>
-            </div>
-          </div>
-
-          <div className="border border-[#22201d] bg-[#10100f] px-4 py-3 text-xs leading-6 text-[#a29d93]">
-            <div className="flex items-start space-x-3">
-              <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-[#c5a880]" />
-              <div>
-                <p className="font-semibold text-[#e8e4dc]">
-                  当前推荐工作流
+          <div className="lg:col-span-5 space-y-4">
+            <div className="border border-[#22201d] p-4 bg-[#11110f] space-y-3">
+              <div className="text-xs font-mono tracking-widest text-[#c5a880] uppercase">
+                Forum Sync Status
+              </div>
+              <div className="text-sm leading-7 text-[#a29d93]">
+                <p>
+                  当前源：
+                  <span className="text-[#e8e4dc]">
+                    {forumSyncMeta?.source || 'bootstrap-cache'}
+                  </span>
                 </p>
                 <p>
-                  公开用户：Journal 使用 GitHub Issues 投递；Forum 使用 GitHub Discussions 交流。
-                  管理员：只有在需要把 Archive 直接写入仓库时，才临时输入 token。
+                  最近同步：
+                  <span className="text-[#e8e4dc]">
+                    {formatSyncTime(forumSyncMeta?.lastSyncedAt)}
+                  </span>
                 </p>
+                <p>
+                  状态：
+                  <span
+                    className={
+                      forumSyncMeta?.status === 'error'
+                        ? 'text-[#d29a91]'
+                        : 'text-[#9bc08d]'
+                    }
+                  >
+                    {forumSyncMeta?.status || 'idle'}
+                  </span>
+                </p>
+                {forumSyncMeta?.error ? (
+                  <p className="text-[#d29a91] break-words">
+                    错误：{forumSyncMeta.error}
+                  </p>
+                ) : null}
               </div>
             </div>
-          </div>
 
-          <div className="flex flex-col sm:flex-row gap-3">
-            <button
-              type="submit"
-              className="flex-1 bg-[#c5a880] text-[#0d0d0c] hover:bg-[#b0936f] py-3 transition-all font-semibold tracking-widest uppercase flex items-center justify-center space-x-2"
-            >
-              <CheckCircle className="w-4 h-4" />
-              <span>Save Configuration / 保存配置</span>
-            </button>
+            <div className="border border-[#22201d] p-4 bg-[#11110f] space-y-3">
+              <div className="text-xs font-mono tracking-widest text-[#c5a880] uppercase flex items-center gap-2">
+                <Settings className="w-4 h-4" />
+                <span>Repository Preview</span>
+              </div>
 
-            <button
-              type="button"
-              onClick={handleResetDefaults}
-              className="flex-1 border border-[#3d382f] text-[#d4cec2] hover:border-[#c5a880] hover:text-[#f4f1eb] py-3 transition-all font-semibold tracking-widest uppercase flex items-center justify-center space-x-2"
-            >
-              <RotateCcw className="w-4 h-4" />
-              <span>Reset Defaults / 恢复默认</span>
-            </button>
-          </div>
+              <div className="text-xs text-[#a29d93] break-all">{repositoryUrl}</div>
+              <div className="text-xs text-[#a29d93] break-all">{discussionsUrl}</div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={handleClearToken}
-              className="border border-[#22201d] text-[#a29d93] hover:text-[#f4f1eb] hover:border-[#c5a880] py-2.5 transition-all font-medium tracking-widest uppercase"
-            >
-              清空会话 Token
-            </button>
+              <div className="flex flex-wrap gap-3">
+                <a
+                  href={repositoryUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 border border-[#c5a880] hover:bg-[#c5a880] hover:text-[#0d0d0c] text-[#c5a880] px-4 py-2 text-xs font-mono tracking-widest transition-all uppercase"
+                >
+                  <Github className="w-4 h-4" />
+                  Open Repo
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
 
-            <button
-              type="button"
-              onClick={handleClearAll}
-              className="border border-[#552d2d] text-[#d7b4b4] hover:text-[#ffe4e4] hover:border-[#8b4747] py-2.5 transition-all font-medium tracking-widest uppercase flex items-center justify-center space-x-2"
-            >
-              <Trash2 className="w-4 h-4" />
-              <span>清空全部本地配置</span>
-            </button>
+                <a
+                  href={discussionsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 border border-[#423f39] hover:border-[#c5a880] hover:text-[#c5a880] text-[#a29d93] px-4 py-2 text-xs font-mono tracking-widest transition-all uppercase"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  Open Discussions
+                </a>
+              </div>
+            </div>
+
+            <div className="border border-[#22201d] p-4 bg-[#11110f] space-y-3">
+              <div className="text-xs font-mono tracking-widest text-[#c5a880] uppercase">
+                管理员说明
+              </div>
+              <p className="text-sm leading-7 text-[#a29d93]">
+                若你希望站内直接发帖/回复/点赞，必须额外引入 GitHub App
+                或 OAuth 代理；这已经超出“仅提交仓库改动”的范围。因此本补丁实现的是
+                GitHub 原生、可直接落仓库的安全上限：镜像读取 + 原生写入跳转。
+              </p>
+            </div>
           </div>
         </form>
       </div>
