@@ -1,16 +1,4 @@
-/**
- * 修改原因：
- * 1. 将 GitHub owner/repo 与 token 分离：owner/repo 保存在 localStorage，token 仅保存在 sessionStorage。
- * 2. 启动时自动迁移旧版 localStorage 中残留的 token，减少敏感信息长期驻留。
- * 3. 继续兼容现有 Home / About / Archives / Forum / Journal 页面结构。
- *
- * 兼容性注意：
- * - 保留原有 localStorage key: anima_github_config_uc
- * - 保留原有 archive/discussion 本地存储 key
- * - 若旧缓存里存在 githubConfig.token，会在首次加载时自动迁移到 sessionStorage
- */
-
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Header from './components/layout/Header';
 import MobileNav from './components/layout/MobileNav';
 import Footer from './components/layout/Footer';
@@ -25,47 +13,78 @@ import { INITIAL_ARCHIVE, INITIAL_DISCUSSIONS } from './data/initialData';
 import useLocalStorage from './hooks/useLocalStorage';
 import { formatArchiveDate } from './utils/date';
 import {
+  fetchGithubForumDiscussions,
   generateGithubIssueUrl,
   getDiscussionsUrl,
-  syncArchiveToGithub,
 } from './utils/github';
 import {
-  combineGithubConfig,
+  clearStoredGithubToken,
   DEFAULT_GITHUB_CONFIG,
+  GITHUB_FORUM_POLL_INTERVAL_MS,
   GITHUB_STORAGE_KEY,
-  GITHUB_TOKEN_SESSION_KEY,
-  hasWritableGithubToken,
   sanitizeGithubConfig,
 } from './config/github';
 
+function buildLocalDraftDiscussion(payload) {
+  return {
+    id: `local-draft-${Date.now()}`,
+    source: 'local-draft',
+    githubId: '',
+    number: null,
+    title: payload.title,
+    content: payload.content,
+    category: payload.category,
+    author: 'Local_Draft',
+    likes: 0,
+    replies: [],
+    date: formatArchiveDate(),
+    createdAtISO: new Date().toISOString(),
+    updatedAtISO: new Date().toISOString(),
+    url: '',
+  };
+}
+
+function mergeRemoteWithLocalDrafts(remoteItems, previousItems) {
+  const drafts = previousItems.filter((item) => item.source === 'local-draft');
+  const merged = [...remoteItems, ...drafts];
+
+  return merged.sort((left, right) => {
+    const leftTime = new Date(
+      left.updatedAtISO || left.createdAtISO || 0,
+    ).getTime();
+    const rightTime = new Date(
+      right.updatedAtISO || right.createdAtISO || 0,
+    ).getTime();
+
+    return rightTime - leftTime;
+  });
+}
+
 export default function App() {
-  const [activeTab, setActiveTab] = useState('home'); // home | archive | forum | journal | about | settings
+  const [activeTab, setActiveTab] = useState('home');
   const [archiveList, setArchiveList] = useLocalStorage(
     'anima_archive_local_uc',
-    INITIAL_ARCHIVE
+    INITIAL_ARCHIVE,
   );
   const [discussions, setDiscussions] = useLocalStorage(
     'anima_forum_local_uc',
-    INITIAL_DISCUSSIONS
+    INITIAL_DISCUSSIONS,
   );
-
   const [githubConfig, setGithubConfig] = useLocalStorage(
     GITHUB_STORAGE_KEY,
-    DEFAULT_GITHUB_CONFIG
+    DEFAULT_GITHUB_CONFIG,
   );
-
-  const [githubToken, setGithubToken] = useState(() => {
-    try {
-      return sessionStorage.getItem(GITHUB_TOKEN_SESSION_KEY) || '';
-    } catch {
-      return '';
-    }
-  });
-
   const [readingDoc, setReadingDoc] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [archiveFilter, setArchiveFilter] = useState('全部');
   const [showNotification, setShowNotification] = useState(null);
+
+  const [forumSyncMeta, setForumSyncMeta] = useState({
+    status: 'idle',
+    source: 'bootstrap-cache',
+    lastSyncedAt: null,
+    error: '',
+  });
 
   const [newArchive, setNewArchive] = useState({
     title: '',
@@ -83,7 +102,6 @@ export default function App() {
   });
 
   const [newReply, setNewReply] = useState({});
-
   const [newPaper, setNewPaper] = useState({
     title: '',
     author: '',
@@ -91,58 +109,82 @@ export default function App() {
     email: '',
   });
 
-  const resolvedGithubConfig = combineGithubConfig(githubConfig, githubToken);
+  const resolvedGithubConfig = useMemo(
+    () => sanitizeGithubConfig(githubConfig),
+    [githubConfig],
+  );
 
   useEffect(() => {
-    // 启动迁移：把旧版 localStorage 中可能存在的 token 迁移到 sessionStorage
-    const legacyToken =
-      typeof githubConfig?.token === 'string' ? githubConfig.token.trim() : '';
+    clearStoredGithubToken();
+    setGithubConfig((previous) => sanitizeGithubConfig(previous));
+  }, [setGithubConfig]);
 
-    const normalizedConfig = sanitizeGithubConfig(githubConfig);
-
-    const needConfigMigration =
-      (githubConfig?.owner ?? '') !== normalizedConfig.owner ||
-      (githubConfig?.repo ?? '') !== normalizedConfig.repo ||
-      Object.prototype.hasOwnProperty.call(githubConfig || {}, 'token');
-
-    if (legacyToken && !githubToken) {
-      setGithubToken(legacyToken);
-    }
-
-    if (needConfigMigration) {
-      setGithubConfig(normalizedConfig);
-    }
-    // 仅在首次启动执行一次迁移
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    try {
-      if (githubToken) {
-        sessionStorage.setItem(GITHUB_TOKEN_SESSION_KEY, githubToken);
-      } else {
-        sessionStorage.removeItem(GITHUB_TOKEN_SESSION_KEY);
-      }
-    } catch {
-      // 浏览器禁用 sessionStorage 时保持页面可用
-    }
-  }, [githubToken]);
-
-  function triggerNotification(message, type = 'success') {
+  const triggerNotification = useCallback((message, type = 'success') => {
     setShowNotification({ message, type });
     window.setTimeout(() => setShowNotification(null), 3500);
-  }
+  }, []);
 
-  async function handlePublishArchive(event) {
+  const refreshGithubForum = useCallback(
+    async ({ silent = false } = {}) => {
+      setForumSyncMeta((previous) => ({
+        ...previous,
+        status: 'syncing',
+        error: '',
+      }));
+
+      try {
+        const result = await fetchGithubForumDiscussions(resolvedGithubConfig);
+
+        setDiscussions((previous) =>
+          mergeRemoteWithLocalDrafts(result.items, previous),
+        );
+
+        setForumSyncMeta({
+          status: 'ready',
+          source: result.meta.source || 'github-actions-cache',
+          lastSyncedAt: result.meta.syncedAt || new Date().toISOString(),
+          error: '',
+        });
+
+        if (!silent) {
+          triggerNotification('Forum 已从 GitHub Discussions 镜像缓存完成同步。');
+        }
+      } catch (error) {
+        setForumSyncMeta((previous) => ({
+          ...previous,
+          status: 'error',
+          error: error.message,
+        }));
+
+        if (!silent) {
+          triggerNotification(`Forum 同步失败：${error.message}`, 'error');
+        }
+      }
+    },
+    [resolvedGithubConfig, setDiscussions, triggerNotification],
+  );
+
+  useEffect(() => {
+    if (activeTab !== 'forum') {
+      return undefined;
+    }
+
+    refreshGithubForum({ silent: true });
+
+    const timer = window.setInterval(() => {
+      refreshGithubForum({ silent: true });
+    }, GITHUB_FORUM_POLL_INTERVAL_MS);
+
+    return () => window.clearInterval(timer);
+  }, [activeTab, refreshGithubForum]);
+
+  function handlePublishArchive(event) {
     event.preventDefault();
 
     if (!newArchive.title || !newArchive.content) {
       triggerNotification('请填写完整的标题和探讨正文', 'error');
       return;
     }
-
-    const explicitOwner =
-      typeof githubConfig?.owner === 'string' && githubConfig.owner.trim();
 
     const item = {
       id: `arch-${Date.now()}`,
@@ -154,26 +196,10 @@ export default function App() {
         .map((tag) => tag.trim())
         .filter(Boolean),
       summary: newArchive.summary || `${newArchive.content.substring(0, 110)}...`,
-      author: explicitOwner ? resolvedGithubConfig.owner : 'Anonymous Scholar',
+      author: resolvedGithubConfig.owner || 'Anonymous Scholar',
       date: formatArchiveDate(),
       content: newArchive.content,
     };
-
-    if (hasWritableGithubToken(githubToken)) {
-      triggerNotification('正在通过 GitHub API 同步至远程档案库...');
-
-      try {
-        await syncArchiveToGithub(resolvedGithubConfig, item);
-        triggerNotification('档案已成功写入远程 Git 仓库！');
-      } catch (error) {
-        triggerNotification(
-          `同步失败: ${error.message}，已保存在本地沙盒。`,
-          'error'
-        );
-      }
-    } else {
-      triggerNotification('文献已安全收录于本地沙盒档案。');
-    }
 
     setArchiveList([item, ...archiveList]);
     setNewArchive({
@@ -184,6 +210,10 @@ export default function App() {
       summary: '',
       content: '',
     });
+
+    triggerNotification(
+      '文献已保存到浏览器本地沙盒。公开站点已移除浏览器内 PAT 写仓库流程。',
+    );
   }
 
   function handleCreateDiscussion(event) {
@@ -194,30 +224,18 @@ export default function App() {
       return;
     }
 
-    const item = {
-      id: `disc-${Date.now()}`,
-      title: newDiscussion.title,
-      category: newDiscussion.category,
-      author: 'A_Seeker',
-      likes: 1,
-      replies: [
-        {
-          author: 'Anima_Keeper',
-          content:
-            '欢迎开启此议题。文字是锚，将漂浮在潜意识海洋中的无序意象固定在理性的陆地上。',
-          date: formatArchiveDate(),
-        },
-      ],
-      date: formatArchiveDate(),
-    };
+    const draft = buildLocalDraftDiscussion(newDiscussion);
 
-    setDiscussions([item, ...discussions]);
+    setDiscussions((previous) => [draft, ...previous]);
     setNewDiscussion({
       title: '',
       category: '梦境探讨 / ONEIROMANCY',
       content: '',
     });
-    triggerNotification('议题已在本地沙盒中记录。');
+
+    triggerNotification(
+      '已保存本地草稿。正式发布讨论请点击 Open Discussions 前往 GitHub 原生页面。',
+    );
   }
 
   function handleAddReply(discId) {
@@ -227,8 +245,22 @@ export default function App() {
       return;
     }
 
-    setDiscussions(
-      discussions.map((discussion) => {
+    const target = discussions.find((item) => item.id === discId);
+
+    if (!target) {
+      return;
+    }
+
+    if (target.source === 'github') {
+      triggerNotification(
+        '镜像帖子不能在站内直接回复，请点击卡片中的 GitHub 原帖链接进行回复。',
+        'error',
+      );
+      return;
+    }
+
+    setDiscussions((previous) =>
+      previous.map((discussion) => {
         if (discussion.id !== discId) {
           return discussion;
         }
@@ -236,32 +268,48 @@ export default function App() {
         return {
           ...discussion,
           replies: [
-            ...discussion.replies,
+            ...(Array.isArray(discussion.replies) ? discussion.replies : []),
             {
+              id: `local-reply-${Date.now()}`,
               author: 'Pilgrim_X',
-              content: text,
+              content: text.trim(),
               date: formatArchiveDate(),
             },
           ],
+          updatedAtISO: new Date().toISOString(),
         };
-      })
+      }),
     );
 
-    setNewReply({
-      ...newReply,
+    setNewReply((previous) => ({
+      ...previous,
       [discId]: '',
-    });
+    }));
 
-    triggerNotification('思想回响已记录。');
+    triggerNotification('本地草稿回复已记录。');
   }
 
   function handleLike(discId) {
-    setDiscussions(
-      discussions.map((discussion) =>
+    const target = discussions.find((item) => item.id === discId);
+
+    if (!target) {
+      return;
+    }
+
+    if (target.source === 'github') {
+      triggerNotification(
+        '镜像帖子不能在站内直接点赞，请前往 GitHub 原帖进行 upvote / reaction。',
+        'error',
+      );
+      return;
+    }
+
+    setDiscussions((previous) =>
+      previous.map((discussion) =>
         discussion.id === discId
-          ? { ...discussion, likes: discussion.likes + 1 }
-          : discussion
-      )
+          ? { ...discussion, likes: Number(discussion.likes || 0) + 1 }
+          : discussion,
+      ),
     );
   }
 
@@ -274,93 +322,96 @@ export default function App() {
     }
 
     const url = generateGithubIssueUrl(resolvedGithubConfig, newPaper);
+
     window.open(url, '_blank', 'noopener,noreferrer');
+
     triggerNotification(
-      '标准 Issue 格式稿件已生成。请在打开的 GitHub 页面中点击 Submit 进行递交！'
+      '标准 Issue 格式稿件已生成。请在打开的 GitHub 页面中点击 Submit 进行递交！',
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0d0d0c] text-[#e8e4dc]">
-      <Header
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        setReadingDoc={setReadingDoc}
-        githubConfig={resolvedGithubConfig}
-      />
+    <div className="min-h-screen bg-[#0d0d0c] text-[#e8e4dc] pb-24 md:pb-0">
+      <Notification notification={showNotification} />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24 md:pb-14">
-        <Notification notification={showNotification} />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <Header
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          setReadingDoc={setReadingDoc}
+          githubConfig={resolvedGithubConfig}
+        />
 
-        {activeTab === 'home' && (
-          <Home
-            archiveList={archiveList}
-            setActiveTab={setActiveTab}
-            setReadingDoc={setReadingDoc}
-          />
-        )}
+        <main className="py-8">
+          {activeTab === 'home' && (
+            <Home
+              archiveList={archiveList}
+              setActiveTab={setActiveTab}
+              setReadingDoc={setReadingDoc}
+            />
+          )}
 
-        {activeTab === 'about' && <About />}
+          {activeTab === 'about' && <About />}
 
-        {activeTab === 'archive' && (
-          <Archives
-            archiveList={archiveList}
-            archiveFilter={archiveFilter}
-            setArchiveFilter={setArchiveFilter}
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            readingDoc={readingDoc}
-            setReadingDoc={setReadingDoc}
-            newArchive={newArchive}
-            setNewArchive={setNewArchive}
-            handlePublishArchive={handlePublishArchive}
-            githubConfig={resolvedGithubConfig}
-          />
-        )}
+          {activeTab === 'archive' && (
+            <Archives
+              archiveList={archiveList}
+              archiveFilter={archiveFilter}
+              setArchiveFilter={setArchiveFilter}
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              readingDoc={readingDoc}
+              setReadingDoc={setReadingDoc}
+              newArchive={newArchive}
+              setNewArchive={setNewArchive}
+              handlePublishArchive={handlePublishArchive}
+              githubConfig={resolvedGithubConfig}
+            />
+          )}
 
-        {activeTab === 'forum' && (
-          <Forum
-            discussions={discussions}
-            newDiscussion={newDiscussion}
-            setNewDiscussion={setNewDiscussion}
-            newReply={newReply}
-            setNewReply={setNewReply}
-            handleCreateDiscussion={handleCreateDiscussion}
-            handleAddReply={handleAddReply}
-            handleLike={handleLike}
-            getDiscussionsUrl={() => getDiscussionsUrl(resolvedGithubConfig)}
-          />
-        )}
+          {activeTab === 'forum' && (
+            <Forum
+              discussions={discussions}
+              newDiscussion={newDiscussion}
+              setNewDiscussion={setNewDiscussion}
+              newReply={newReply}
+              setNewReply={setNewReply}
+              handleCreateDiscussion={handleCreateDiscussion}
+              handleAddReply={handleAddReply}
+              handleLike={handleLike}
+              getDiscussionsUrl={() => getDiscussionsUrl(resolvedGithubConfig)}
+              refreshGithubForum={refreshGithubForum}
+              forumSyncMeta={forumSyncMeta}
+            />
+          )}
 
-        {activeTab === 'journal' && (
-          <Journal
-            newPaper={newPaper}
-            setNewPaper={setNewPaper}
-            handleSubmitPaper={handleSubmitPaper}
-          />
-        )}
+          {activeTab === 'journal' && (
+            <Journal
+              newPaper={newPaper}
+              setNewPaper={setNewPaper}
+              handleSubmitPaper={handleSubmitPaper}
+            />
+          )}
 
-        {activeTab === 'settings' && (
-          <SettingsPanel
-            githubConfig={sanitizeGithubConfig(githubConfig)}
-            setGithubConfig={setGithubConfig}
-            githubToken={githubToken}
-            setGithubToken={setGithubToken}
-            triggerNotification={triggerNotification}
-            setActiveTab={setActiveTab}
-          />
-        )}
+          {activeTab === 'settings' && (
+            <SettingsPanel
+              githubConfig={resolvedGithubConfig}
+              setGithubConfig={setGithubConfig}
+              forumSyncMeta={forumSyncMeta}
+              triggerNotification={triggerNotification}
+              setActiveTab={setActiveTab}
+            />
+          )}
+        </main>
 
         <Footer />
       </div>
 
-      <div className="md:hidden fixed bottom-0 inset-x-0 border-t border-[#22201d] bg-[#0d0d0c]/95 backdrop-blur-sm px-4 py-3">
-        <MobileNav
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          setReadingDoc={setReadingDoc}
-        />
-      </div>
+      <MobileNav
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        setReadingDoc={setReadingDoc}
+      />
     </div>
   );
 }
