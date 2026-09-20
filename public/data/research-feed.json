@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-19T04:04:42.711Z",
+  "updatedAt": "2026-09-20T04:23:53.564Z",
   "timezone": "Asia/Shanghai",
   "schedule": "Every day at 08:00 UTC+8 (GitHub Actions cron: 0 0 * * *)",
   "sources": [
@@ -33,10 +33,32 @@
       "type": "crossref",
       "url": "https://api.crossref.org/works",
       "ok": true,
-      "count": 0
+      "count": 1
     }
   ],
   "items": [
+    {
+      "id": "psyarxiv:10.31234/osf.io/ekj29_v1",
+      "title": "Reframing the Unconscious: A Conceptual Mapping of Jungian Analytical Psychology onto Indian Knowledge Systems",
+      "subtitle": "PSYARXIV · 精神分析 · PREPRINT SIGNAL",
+      "category": "RESEARCH FEED / 研究动态",
+      "source": "PsyArXiv",
+      "sourceId": "psyarxiv-psychoanalysis",
+      "sourceCategory": "PsyArXiv · 精神分析",
+      "author": "Manoj Kumar Mallick",
+      "date": "2026.09.20",
+      "publishedAt": "2026-09-19T16:07:52Z",
+      "summary": "Carl Jung engaged Eastern thought throughout his career, writing psychological commentaries on The Secret of the Golden Flower, the Tibetan Book of the Dead, and Kuṇḍalinī yoga, yet this engagement remained impressionistic rather than systematic. No existing review pairs his core constructs with named terms from classical Indian philosophy. This paper proposes a term-by-term conceptual correspondence between six constructs of Jungian analytical psychology and six terms drawn from Sāṃkhya, Patañjali's Yoga, and Advaita Vedānta. It does not introduce a new theoretical model, acronym, or unifying framework. The paper follows Jaakkola's Theory Synthesis template for conceptual articles, distinguished from Theory Adaptation, Typology, and Model approaches. Four criteria guided term selection: definitional precision, scope-matching, textual traceability, and precision over popularity. Each correspondence was checked against primary Jungian texts and established secondary scholarship in Indology. Six correspondences are proposed: Collective Unconscious–Mahat, Archetypes–Tattva, Persona–Vyavahārika, Anima/Animus–Puruṣa/ Prakṛti, Shadow–Kleśa, and Individuation–Svarūpa-bodha. A central divergence emerged alongside these resemblances. Jung's individuation preserves a differentiated, related self, while Advaita's deeper vocabulary points toward non-dual dissolution of that self. This paper treats the divergence as a substantive finding, not a flaw in the method. The mapping offers culturally grounded vocabulary for teaching analytical psychology in Indian settings and for developing culturally resonant counseling language, illustrated through a brief clinical vignette. Risks of essentialism, translation distance, and untested clinical application are named explicitly, with concrete directions proposed for future empirical and textual work.",
+      "content": "Carl Jung engaged Eastern thought throughout his career, writing psychological commentaries on The Secret of the Golden Flower, the Tibetan Book of the Dead, and Kuṇḍalinī yoga, yet this engagement remained impressionistic rather than systematic. No existing review pairs his core constructs with named terms from classical Indian philosophy. This paper proposes a term-by-term conceptual correspondence between six constructs of Jungian analytical psychology and six terms drawn from Sāṃkhya, Patañjali's Yoga, and Advaita Vedānta. It does not introduce a new theoretical model, acronym, or unifying framework. The paper follows Jaakkola's Theory Synthesis template for conceptual articles, distinguished from Theory Adaptation, Typology, and Model approaches. Four criteria guided term selection: definitional precision, scope-matching, textual traceability, and precision over popularity. Each correspondence was checked against primary Jungian texts and established secondary scholarship in Indology. Six correspondences are proposed: Collective Unconscious–Mahat, Archetypes–Tattva, Persona–Vyavahārika, Anima/Animus–Puruṣa/ Prakṛti, Shadow–Kleśa, and Individuation–Svarūpa-bodha. A central divergence emerged alongside these resemblances. Jung's individuation preserves a differentiated, related self, while Advaita's deeper vocabulary points toward non-dual dissolution of that self. This paper treats the divergence as a substantive finding, not a flaw in the method. The mapping offers culturally grounded vocabulary for teaching analytical psychology in Indian settings and for developing culturally resonant counseling language, illustrated through a brief clinical vignette. Risks of essentialism, translation distance, and untested clinical application are named explicitly, with concrete directions proposed for future empirical and textual work.",
+      "tags": [
+        "PsyArXiv",
+        "精神分析",
+        "psychoanalysis"
+      ],
+      "url": "https://doi.org/10.31234/osf.io/ekj29_v1",
+      "pdfUrl": "",
+      "doi": "10.31234/osf.io/ekj29_v1"
+    },
     {
       "id": "psyarxiv:10.31234/osf.io/f84xq_v1",
       "title": "Remaking “The Unconscious” Paradigm, Act I: …The Gap” Between Subliminal Processing and the Unconscious “Mind…",
@@ -894,28 +916,6 @@
       "url": "https://doi.org/10.31234/osf.io/zvbkp_v1",
       "pdfUrl": "",
       "doi": "10.31234/osf.io/zvbkp_v1"
-    },
-    {
-      "id": "psyarxiv:10.31234/osf.io/a7yzv_v1",
-      "title": "Intensive Short-Term Dynamic Psychotherapy for depression: Treatment effectiveness and effects of unlocking the unconscious",
-      "subtitle": "PSYARXIV · 精神分析 · PREPRINT SIGNAL",
-      "category": "RESEARCH FEED / 研究动态",
-      "source": "PsyArXiv",
-      "sourceId": "psyarxiv-psychoanalysis",
-      "sourceCategory": "PsyArXiv · 精神分析",
-      "author": "Robert Johansson, Kajsa Eriksson, Kalle Åberg, Joel Town, Allan Abbass",
-      "date": "2025.04.09",
-      "publishedAt": "2025-04-09T08:16:58Z",
-      "summary": "Intensive Short-Term Dynamic Psychotherapy (ISTDP) has an increasing amount of evidence regarding its efficacy across various psychiatric conditions and specifically with depression. The aim of this study is to replicate the findings of controlled research by examining the effects of ISTDP in the treatment of depression in a large naturalistic sample, and also to explore the mediating role of unlocking the unconscious in this treatment. Healthcare costs were also explored. Data were collected from a naturalistic study conducted at the Centre for Emotions and Health, Halifax, Nova Scotia, Canada, between 1999 and 2007. A sample of 195 patients' self-reported levels of depression, measured by the depression subscale of the Brief Symptom Inventory (BSI), and interpersonal problems, measured by the Inventory of Interpersonal Problems-32 (IIP-32), were analyzed using mixed-effects models. The analysis revealed a significant and large effect of ISTDP on both depression (within-group Cohen's d = 1.02, 95% CI [0.75, 1.26]) and interpersonal problems (within-group Cohen's d = 1.17, 95% CI [0.89, 1.46]). The process of unlocking the unconscious emerged as a significant mediator of treatment outcomes for both depression (between-group Cohen’s d = 0.60, 95% CI [0.16, 1.07]) and interpersonal problems (between-group Cohen’s d = 0.47, 95% CI [-0.05, 0.95]). Reductions in costs regarding physician (p = 0.07) and hospital costs (p < 0.05) were observed. These findings support the efficacy of ISTDP in treating depression and highlight the importance of unlocking the unconscious among patients with depression.",
-      "content": "Intensive Short-Term Dynamic Psychotherapy (ISTDP) has an increasing amount of evidence regarding its efficacy across various psychiatric conditions and specifically with depression. The aim of this study is to replicate the findings of controlled research by examining the effects of ISTDP in the treatment of depression in a large naturalistic sample, and also to explore the mediating role of unlocking the unconscious in this treatment. Healthcare costs were also explored. Data were collected from a naturalistic study conducted at the Centre for Emotions and Health, Halifax, Nova Scotia, Canada, between 1999 and 2007. A sample of 195 patients' self-reported levels of depression, measured by the depression subscale of the Brief Symptom Inventory (BSI), and interpersonal problems, measured by the Inventory of Interpersonal Problems-32 (IIP-32), were analyzed using mixed-effects models. The analysis revealed a significant and large effect of ISTDP on both depression (within-group Cohen's d = 1.02, 95% CI [0.75, 1.26]) and interpersonal problems (within-group Cohen's d = 1.17, 95% CI [0.89, 1.46]). The process of unlocking the unconscious emerged as a significant mediator of treatment outcomes for both depression (between-group Cohen’s d = 0.60, 95% CI [0.16, 1.07]) and interpersonal problems (between-group Cohen’s d = 0.47, 95% CI [-0.05, 0.95]). Reductions in costs regarding physician (p = 0.07) and hospital costs (p < 0.05) were observed. These findings support the efficacy of ISTDP in treating depression and highlight the importance of unlocking the unconscious among patients with depression.",
-      "tags": [
-        "PsyArXiv",
-        "精神分析",
-        "psychoanalysis"
-      ],
-      "url": "https://doi.org/10.31234/osf.io/a7yzv_v1",
-      "pdfUrl": "",
-      "doi": "10.31234/osf.io/a7yzv_v1"
     }
   ]
 }
