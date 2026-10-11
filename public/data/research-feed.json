@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-10T05:18:32.053Z",
+  "updatedAt": "2026-10-11T05:09:12.078Z",
   "timezone": "Asia/Shanghai",
   "schedule": "Every day at 08:00 UTC+8 (GitHub Actions cron: 0 0 * * *)",
   "sources": [
