@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-14T05:48:45.610Z",
+  "updatedAt": "2026-11-15T05:49:27.545Z",
   "timezone": "Asia/Shanghai",
   "schedule": "Every day at 08:00 UTC+8 (GitHub Actions cron: 0 0 * * *)",
   "sources": [
@@ -38,28 +38,6 @@
   ],
   "items": [
     {
-      "id": "psyarxiv:10.31234/osf.io/7jrqm_v1",
-      "title": "A Multilevel Signal Detection Theory Approach to Unconscious Processing Research",
-      "subtitle": "PSYARXIV · 精神分析 · PREPRINT SIGNAL",
-      "category": "RESEARCH FEED / 研究动态",
-      "source": "PsyArXiv",
-      "sourceId": "psyarxiv-psychoanalysis",
-      "sourceCategory": "PsyArXiv · 精神分析",
-      "author": "Ricardo Rey-Sáez, Alicia Franco-Martínez, Miguel A. Vadillo, Francisco Garre-Frutos",
-      "date": "2026.11.09",
-      "publishedAt": "2026-11-08T22:25:47Z",
-      "summary": "To test for unconscious processing, researchers typically compare measures of a stimulus’s influence on behavior with measures of awareness of that stimulus. Three common hypotheses are often tested: whether influence is significant while awareness is not (group-level dissociation), whether both measures are independent across participants (correlation), or whether influence persists when awareness is extrapolated to be zero (regression intercept). Conventional analyses suffer from three well-known methodological limitations: First, both measures often differ in scale and number of trials, complicating meaningful comparisons of their relative sensitivities. Second, analyses based on participant-level sensitivities ignore measurement error, which attenuates correlations and inflates regression intercepts, leading to misleading evidence for unconscious processing. Third, the correlation hypothesis requires evidence of null association, but conventional significance tests provide limited evidence for the absence of an effect. To address these problems, we introduce a multilevel signal detection theory (SDT) model that jointly analyzes trial-level responses from both measures and allows all three hypotheses to be tested directly while accounting for measurement error. The model supports both frequentist and Bayesian estimation, allowing researchers to run non-superiority tests and quantify evidence for null hypotheses using Bayes factors. We illustrate this approach through reanalyses of three published studies on unconscious processing. The {uSDT} R package provides an accessible way to fit the joint multilevel SDT model and evaluate all three hypotheses more rigorously.",
-      "content": "To test for unconscious processing, researchers typically compare measures of a stimulus’s influence on behavior with measures of awareness of that stimulus. Three common hypotheses are often tested: whether influence is significant while awareness is not (group-level dissociation), whether both measures are independent across participants (correlation), or whether influence persists when awareness is extrapolated to be zero (regression intercept). Conventional analyses suffer from three well-known methodological limitations: First, both measures often differ in scale and number of trials, complicating meaningful comparisons of their relative sensitivities. Second, analyses based on participant-level sensitivities ignore measurement error, which attenuates correlations and inflates regression intercepts, leading to misleading evidence for unconscious processing. Third, the correlation hypothesis requires evidence of null association, but conventional significance tests provide limited evidence for the absence of an effect. To address these problems, we introduce a multilevel signal detection theory (SDT) model that jointly analyzes trial-level responses from both measures and allows all three hypotheses to be tested directly while accounting for measurement error. The model supports both frequentist and Bayesian estimation, allowing researchers to run non-superiority tests and quantify evidence for null hypotheses using Bayes factors. We illustrate this approach through reanalyses of three published studies on unconscious processing. The {uSDT} R package provides an accessible way to fit the joint multilevel SDT model and evaluate all three hypotheses more rigorously.",
-      "tags": [
-        "PsyArXiv",
-        "精神分析",
-        "psychoanalysis"
-      ],
-      "url": "https://doi.org/10.31234/osf.io/7jrqm_v1",
-      "pdfUrl": "",
-      "doi": "10.31234/osf.io/7jrqm_v1"
-    },
-    {
       "id": "psyarxiv:10.31234/osf.io/7jrqm",
       "title": "A Multilevel Signal Detection Theory Approach to Unconscious Processing Research",
       "subtitle": "PSYARXIV · 精神分析 · PREPRINT SIGNAL",
@@ -80,6 +58,28 @@
       "url": "https://doi.org/10.31234/osf.io/7jrqm",
       "pdfUrl": "",
       "doi": "10.31234/osf.io/7jrqm"
+    },
+    {
+      "id": "psyarxiv:10.31234/osf.io/7jrqm_v1",
+      "title": "A Multilevel Signal Detection Theory Approach to Unconscious Processing Research",
+      "subtitle": "PSYARXIV · 精神分析 · PREPRINT SIGNAL",
+      "category": "RESEARCH FEED / 研究动态",
+      "source": "PsyArXiv",
+      "sourceId": "psyarxiv-psychoanalysis",
+      "sourceCategory": "PsyArXiv · 精神分析",
+      "author": "Ricardo Rey-Sáez, Alicia Franco-Martínez, Miguel A. Vadillo, Francisco Garre-Frutos",
+      "date": "2026.11.09",
+      "publishedAt": "2026-11-08T22:25:47Z",
+      "summary": "To test for unconscious processing, researchers typically compare measures of a stimulus’s influence on behavior with measures of awareness of that stimulus. Three common hypotheses are often tested: whether influence is significant while awareness is not (group-level dissociation), whether both measures are independent across participants (correlation), or whether influence persists when awareness is extrapolated to be zero (regression intercept). Conventional analyses suffer from three well-known methodological limitations: First, both measures often differ in scale and number of trials, complicating meaningful comparisons of their relative sensitivities. Second, analyses based on participant-level sensitivities ignore measurement error, which attenuates correlations and inflates regression intercepts, leading to misleading evidence for unconscious processing. Third, the correlation hypothesis requires evidence of null association, but conventional significance tests provide limited evidence for the absence of an effect. To address these problems, we introduce a multilevel signal detection theory (SDT) model that jointly analyzes trial-level responses from both measures and allows all three hypotheses to be tested directly while accounting for measurement error. The model supports both frequentist and Bayesian estimation, allowing researchers to run non-superiority tests and quantify evidence for null hypotheses using Bayes factors. We illustrate this approach through reanalyses of three published studies on unconscious processing. The {uSDT} R package provides an accessible way to fit the joint multilevel SDT model and evaluate all three hypotheses more rigorously.",
+      "content": "To test for unconscious processing, researchers typically compare measures of a stimulus’s influence on behavior with measures of awareness of that stimulus. Three common hypotheses are often tested: whether influence is significant while awareness is not (group-level dissociation), whether both measures are independent across participants (correlation), or whether influence persists when awareness is extrapolated to be zero (regression intercept). Conventional analyses suffer from three well-known methodological limitations: First, both measures often differ in scale and number of trials, complicating meaningful comparisons of their relative sensitivities. Second, analyses based on participant-level sensitivities ignore measurement error, which attenuates correlations and inflates regression intercepts, leading to misleading evidence for unconscious processing. Third, the correlation hypothesis requires evidence of null association, but conventional significance tests provide limited evidence for the absence of an effect. To address these problems, we introduce a multilevel signal detection theory (SDT) model that jointly analyzes trial-level responses from both measures and allows all three hypotheses to be tested directly while accounting for measurement error. The model supports both frequentist and Bayesian estimation, allowing researchers to run non-superiority tests and quantify evidence for null hypotheses using Bayes factors. We illustrate this approach through reanalyses of three published studies on unconscious processing. The {uSDT} R package provides an accessible way to fit the joint multilevel SDT model and evaluate all three hypotheses more rigorously.",
+      "tags": [
+        "PsyArXiv",
+        "精神分析",
+        "psychoanalysis"
+      ],
+      "url": "https://doi.org/10.31234/osf.io/7jrqm_v1",
+      "pdfUrl": "",
+      "doi": "10.31234/osf.io/7jrqm_v1"
     },
     {
       "id": "psyarxiv:10.31234/osf.io/ekj29",
